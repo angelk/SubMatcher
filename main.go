@@ -1,17 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
-func getMatchScore(a string, b string, diffLen int) int {
-
+func getMatchScore(a string, b string, diffLen int) (int, error) {
 	// our algorithm doesn't work with short names
 	if len(a) < 6 || len(b) < 6 {
-		return 0
+		return 0, errors.New("Require string with len >= 6")
 	}
 
 	matchScore := 0
@@ -28,15 +28,13 @@ func getMatchScore(a string, b string, diffLen int) int {
 		}
 	}
 
-	return matchScore
+	return matchScore, nil
 }
 
-func main() {
-	fmt.Printf("hello, world\n")
-	directory := "/home/potaka/Projects/movie/testCases/"
-	files, error := ioutil.ReadDir(directory)
+func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
+	files, error := ioutil.ReadDir(dir)
 	if error != nil {
-		fmt.Println("error!", error)
+		return nil, nil, error
 	}
 
 	movies := make([]os.FileInfo, 0)
@@ -48,6 +46,8 @@ func main() {
 
 	subExtensions := make(map[string]bool)
 	subExtensions[".srt"] = true
+	subExtensions[".sub"] = true
+	subExtensions[".sbv"] = true
 
 	for _, file := range files {
 		ext := filepath.Ext(file.Name())
@@ -60,6 +60,13 @@ func main() {
 			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
 		}
 	}
+
+	return movies, subs, nil
+}
+
+func main() {
+	directory := "/home/potaka/Projects/movie/testCases/"
+	movies, subs, _ := extractFiles(directory)
 
 	fmt.Println("--- Movies")
 	for _, file := range movies {
@@ -80,7 +87,7 @@ func main() {
 		var bestMatchIndex int
 
 		for subIndex, sub := range subs {
-			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
+			tempMatchScore, _ := getMatchScore(movie.Name(), sub.Name(), 3)
 
 			// @TODO check for same score!
 			if bestMatchScore < tempMatchScore {
@@ -99,8 +106,6 @@ func main() {
 		}
 
 		// probably we should ask for confirmation!
-		// @TODO rename files
-
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
