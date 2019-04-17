@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -83,8 +84,18 @@ func rename(old, new string) error {
 }
 
 func main() {
-	directory := "/home/potaka/Projects/movie/testCases/"
-	movies, subs, _ := extractFiles(directory)
+	args := os.Args
+
+	if len(args) < 2 {
+		log.Fatalln("Error, path (1st argument) not provided")
+	}
+
+	directory := args[1]
+	movies, subs, extractFilesError := extractFiles(directory)
+
+	if extractFilesError != nil {
+		log.Fatalln(extractFilesError)
+	}
 
 	fmt.Println("--- Movies")
 	for _, file := range movies {
@@ -123,7 +134,6 @@ func main() {
 			continue
 		}
 
-		// probably we should ask for confirmation!
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
