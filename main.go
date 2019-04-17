@@ -1,19 +1,14 @@
 package main
 
 import (
-	"errors"
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
-func getMatchScore(a string, b string, diffLen int) (int, error) {
-	// our algorithm doesn't work with short names
-	if len(a) < 6 || len(b) < 6 {
-		return 0, errors.New("Require string with len >= 6")
-	}
-
+func getMatchScore(a string, b string, diffLen int) int {
 	matchScore := 0
 
 	aLen := len(a)
@@ -28,7 +23,7 @@ func getMatchScore(a string, b string, diffLen int) (int, error) {
 		}
 	}
 
-	return matchScore, nil
+	return matchScore
 }
 
 func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
@@ -64,6 +59,29 @@ func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
 	return movies, subs, nil
 }
 
+func rename(old, new string) error {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Rename", old, "to", new, "[Y/n]")
+	input, _ := reader.ReadString('\n')
+
+	if input != "Y" && input != "y" && input != "\n" {
+		// renaming denied by user
+		return nil
+	}
+
+	// rename subs file
+	error := os.Rename(
+		old,
+		new,
+	)
+
+	if error != nil {
+		return error
+	}
+
+	return nil
+}
+
 func main() {
 	directory := "/home/potaka/Projects/movie/testCases/"
 	movies, subs, _ := extractFiles(directory)
@@ -87,7 +105,7 @@ func main() {
 		var bestMatchIndex int
 
 		for subIndex, sub := range subs {
-			tempMatchScore, _ := getMatchScore(movie.Name(), sub.Name(), 3)
+			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
 
 			// @TODO check for same score!
 			if bestMatchScore < tempMatchScore {
@@ -109,11 +127,14 @@ func main() {
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
-		// rename subs file
-		os.Rename(
+		renameError := rename(
 			directory+bestMatchFile.Name(),
 			directory+movie.Name()[0:movieLenWithoutExt]+subsExtension,
 		)
+
+		if renameError != nil {
+			fmt.Println(renameError)
+		}
 
 		// remove subs from the list
 		subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
