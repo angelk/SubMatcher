@@ -3,71 +3,24 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func getMatchScore(a string, b string, diffLen int) int {
-	matchScore := 0
-
-	aLen := len(a)
-	bLen := len(b)
-	for i := 0; i+diffLen-1 < aLen; i++ {
-		aPart := a[i : i+diffLen]
-		for j := 0; j+diffLen-1 < bLen; j++ {
-			bPart := b[j : j+diffLen]
-			if aPart == bPart {
-				matchScore++
-			}
-		}
+func rename(old, new string) (bool, error) {
+	if old == new {
+		return true, nil
 	}
 
-	return matchScore
-}
-
-func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
-	files, error := ioutil.ReadDir(dir)
-	if error != nil {
-		return nil, nil, error
-	}
-
-	movies := make([]os.FileInfo, 0)
-	subs := make([]os.FileInfo, 0)
-
-	movieExtensions := make(map[string]bool)
-	movieExtensions[".avi"] = true
-	movieExtensions[".mkv"] = true
-
-	subExtensions := make(map[string]bool)
-	subExtensions[".srt"] = true
-	subExtensions[".sub"] = true
-	subExtensions[".sbv"] = true
-
-	for _, file := range files {
-		ext := filepath.Ext(file.Name())
-
-		if _, ok := movieExtensions[ext]; ok {
-			movies = append(movies, file)
-		} else if _, okSub := subExtensions[ext]; okSub {
-			subs = append(subs, file)
-		} else {
-			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
-		}
-	}
-
-	return movies, subs, nil
-}
-
-func rename(old, new string) error {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Rename", old, "to", new, "[Y/n]")
+	fmt.Print("Rename\n", old, "\nto\n", new, "\n[Y/n]")
 	input, _ := reader.ReadString('\n')
 
 	if input != "Y" && input != "y" && input != "\n" {
 		// renaming denied by user
-		return nil
+		return false, nil
 	}
 
 	// rename subs file
@@ -77,10 +30,10 @@ func rename(old, new string) error {
 	)
 
 	if error != nil {
-		return error
+		return false, error
 	}
 
-	return nil
+	return true, nil
 }
 
 func main() {
@@ -91,6 +44,8 @@ func main() {
 	}
 
 	directory := args[1]
+	directory = strings.TrimRight(directory, string(os.PathSeparator))
+
 	movies, subs, extractFilesError := extractFiles(directory)
 
 	if extractFilesError != nil {
@@ -137,17 +92,20 @@ func main() {
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
-		renameError := rename(
-			directory+bestMatchFile.Name(),
-			directory+movie.Name()[0:movieLenWithoutExt]+subsExtension,
+		fmt.Println("Matched subs for" + movie.Name())
+		renamed, renameError := rename(
+			directory+string(os.PathSeparator)+bestMatchFile.Name(),
+			directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
 		)
 
 		if renameError != nil {
 			fmt.Println(renameError)
 		}
 
-		// remove subs from the list
-		subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
-		subs = subs[:len(subs)-1]
+		if renamed {
+			// remove subs from the list
+			subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
+			subs = subs[:len(subs)-1]
+		}
 	}
 }
