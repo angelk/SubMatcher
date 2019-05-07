@@ -19,6 +19,7 @@ func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
 	movieExtensions := make(map[string]bool)
 	movieExtensions[".avi"] = true
 	movieExtensions[".mkv"] = true
+	movieExtensions[".ts"] = true
 
 	subExtensions := make(map[string]bool)
 	subExtensions[".srt"] = true
