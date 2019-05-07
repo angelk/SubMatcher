@@ -46,7 +46,6 @@ Rename
 to
 ./__test/MySerial S01E01.srt
 [Y/n]
-potaka @ ryzen ~/Projects/subMatcher (init)
 ```
 
 ## Result
