@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"flag"
 )
 
 func rename(old, new string) (bool, error) {
@@ -43,8 +43,7 @@ func main() {
 
 	args := flag.Args()
 
-	fmt.Println(recursiveOption)
-	fmt.Println(args)
+	fmt.Println(*recursiveOption)
 
 	if len(args) < 1 {
 		log.Fatalln("Error, path (1st argument) not provided")
@@ -53,7 +52,12 @@ func main() {
 	directory := args[0]
 	directory = strings.TrimRight(directory, string(os.PathSeparator))
 
-	movies, subs, extractFilesError := extractFiles(directory)
+	rDurectoryScanner(directory)
+
+	fc := extractFiles(directory)
+	movies := fc.Movies
+	subs := fc.Subs
+	extractFilesError := fc.Err
 
 	if extractFilesError != nil {
 		log.Fatalln(extractFilesError)

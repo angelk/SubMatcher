@@ -1,16 +1,30 @@
 package main
 
-import(
+import (
+	"fmt"
 	"io/ioutil"
 	"os"
-	"fmt"
 	"path/filepath"
 )
 
-func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
+type fileCollection struct {
+	Movies []os.FileInfo
+	Subs   []os.FileInfo
+	Err    error
+}
+
+func extractFilesRecursive(dir string) {
+
+}
+
+func extractFiles(dir string) fileCollection {
 	files, error := ioutil.ReadDir(dir)
 	if error != nil {
-		return nil, nil, error
+		return fileCollection{
+			nil,
+			nil,
+			error,
+		}
 	}
 
 	movies := make([]os.FileInfo, 0)
@@ -38,5 +52,77 @@ func extractFiles(dir string) ([]os.FileInfo, []os.FileInfo, error) {
 		}
 	}
 
-	return movies, subs, nil
+	fc := fileCollection{
+		movies,
+		subs,
+		nil,
+	}
+
+	return fc
+}
+
+func extractSubsAndVideos(dir string) fileCollection {
+	files, error := ioutil.ReadDir(dir)
+	if error != nil {
+		return fileCollection{
+			nil,
+			nil,
+			error,
+		}
+	}
+
+	movies := make([]os.FileInfo, 0)
+	subs := make([]os.FileInfo, 0)
+
+	movieExtensions := make(map[string]bool)
+	movieExtensions[".avi"] = true
+	movieExtensions[".mkv"] = true
+	movieExtensions[".ts"] = true
+
+	subExtensions := make(map[string]bool)
+	subExtensions[".srt"] = true
+	subExtensions[".sub"] = true
+	subExtensions[".sbv"] = true
+
+	for _, file := range files {
+		ext := filepath.Ext(file.Name())
+
+		if _, ok := movieExtensions[ext]; ok {
+			movies = append(movies, file)
+		} else if _, okSub := subExtensions[ext]; okSub {
+			subs = append(subs, file)
+		} else {
+			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
+		}
+	}
+
+	fc := fileCollection{
+		movies,
+		subs,
+		nil,
+	}
+
+	return fc
+}
+
+// directory scanner used in "-r" flag
+func rDurectoryScanner(dir string) (chan []os.FileInfo, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	fileChan := make(chan []os.FileInfo)
+
+	go func() {
+		fileCollection := make([]os.FileInfo, 1)
+		for _, file := range files {
+			fileCollection = append(fileCollection, file)
+		}
+
+		fileChan <- fileCollection
+		// @TODO add directories for later scanning
+	}()
+
+	return fileChan, nil
 }
