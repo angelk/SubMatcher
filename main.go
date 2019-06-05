@@ -52,71 +52,88 @@ func main() {
 	directory := args[0]
 	directory = strings.TrimRight(directory, string(os.PathSeparator))
 
-	rDurectoryScanner(directory)
+	var filesChan chan []os.FileInfo
+	var err error
 
-	fc := extractFiles(directory)
-	movies := fc.Movies
-	subs := fc.Subs
-	extractFilesError := fc.Err
-
-	if extractFilesError != nil {
-		log.Fatalln(extractFilesError)
+	if *recursiveOption {
+		filesChan, err = rDirectoryScanner(directory)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		filesChan, err = directoryScanner(directory)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
-	fmt.Println("--- Movies")
-	for _, file := range movies {
-		fmt.Println(file.Name())
-	}
+	for filesCollection := range filesChan {
+		fc := extractFiles(filesCollection)
 
-	fmt.Println("--- Subs")
-	for index, file := range subs {
-		fmt.Println(index, file.Name())
-	}
+		movies := fc.Movies
+		subs := fc.Subs
+		extractFilesError := fc.Err
 
-	fmt.Println("--- --- ---")
+		if extractFilesError != nil {
+			log.Fatalln(extractFilesError)
+		}
 
-	// Matching
-	for _, movie := range movies {
-		var bestMatchScore int
-		var bestMatchFile os.FileInfo
-		var bestMatchIndex int
+		fmt.Println("--- Movies")
+		for _, file := range movies {
+			fmt.Println(file.Name())
+		}
 
-		for subIndex, sub := range subs {
-			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
+		fmt.Println("--- Subs")
+		for index, file := range subs {
+			fmt.Println(index, file.Name())
+		}
 
-			// @TODO check for same score!
-			if bestMatchScore < tempMatchScore {
-				bestMatchScore = tempMatchScore
-				bestMatchFile = sub
-				bestMatchIndex = subIndex
+		fmt.Println("--- --- ---")
+
+		// Matching
+		for _, movie := range movies {
+			var bestMatchScore int
+			var bestMatchFile os.FileInfo
+			var bestMatchIndex int
+
+			for subIndex, sub := range subs {
+				tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
+
+				// @TODO check for same score!
+				if bestMatchScore < tempMatchScore {
+					bestMatchScore = tempMatchScore
+					bestMatchFile = sub
+					bestMatchIndex = subIndex
+				}
+			}
+
+			fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
+			fmt.Println("----")
+
+			if bestMatchScore == 0 {
+				fmt.Println("Skipping score '0'")
+				continue
+			}
+
+			movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
+			subsExtension := filepath.Ext(bestMatchFile.Name())
+
+			fmt.Println("Matched subs for" + movie.Name())
+			renamed, renameError := rename(
+				directory+string(os.PathSeparator)+bestMatchFile.Name(),
+				directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
+			)
+
+			if renameError != nil {
+				fmt.Println(renameError)
+			}
+
+			if renamed {
+				// remove subs from the list
+				subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
+				subs = subs[:len(subs)-1]
 			}
 		}
-
-		fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
-		fmt.Println("----")
-
-		if bestMatchScore == 0 {
-			fmt.Println("Skipping score '0'")
-			continue
-		}
-
-		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
-		subsExtension := filepath.Ext(bestMatchFile.Name())
-
-		fmt.Println("Matched subs for" + movie.Name())
-		renamed, renameError := rename(
-			directory+string(os.PathSeparator)+bestMatchFile.Name(),
-			directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
-		)
-
-		if renameError != nil {
-			fmt.Println(renameError)
-		}
-
-		if renamed {
-			// remove subs from the list
-			subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
-			subs = subs[:len(subs)-1]
-		}
 	}
+
 }
