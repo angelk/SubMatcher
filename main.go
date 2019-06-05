@@ -68,72 +68,83 @@ func main() {
 	}
 
 	for filesCollection := range filesChan {
-		fc := extractFiles(filesCollection)
-
-		movies := fc.Movies
-		subs := fc.Subs
-		extractFilesError := fc.Err
-
-		if extractFilesError != nil {
-			log.Fatalln(extractFilesError)
-		}
-
-		fmt.Println("--- Movies")
-		for _, file := range movies {
-			fmt.Println(file.Name())
-		}
-
-		fmt.Println("--- Subs")
-		for index, file := range subs {
-			fmt.Println(index, file.Name())
-		}
-
-		fmt.Println("--- --- ---")
-
-		// Matching
-		for _, movie := range movies {
-			var bestMatchScore int
-			var bestMatchFile os.FileInfo
-			var bestMatchIndex int
-
-			for subIndex, sub := range subs {
-				tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
-
-				// @TODO check for same score!
-				if bestMatchScore < tempMatchScore {
-					bestMatchScore = tempMatchScore
-					bestMatchFile = sub
-					bestMatchIndex = subIndex
-				}
-			}
-
-			fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
-			fmt.Println("----")
-
-			if bestMatchScore == 0 {
-				fmt.Println("Skipping score '0'")
-				continue
-			}
-
-			movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
-			subsExtension := filepath.Ext(bestMatchFile.Name())
-
-			fmt.Println("Matched subs for" + movie.Name())
-			renamed, renameError := rename(
-				directory+string(os.PathSeparator)+bestMatchFile.Name(),
-				directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
-			)
-
-			if renameError != nil {
-				fmt.Println(renameError)
-			}
-
-			if renamed {
-				// remove subs from the list
-				subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
-				subs = subs[:len(subs)-1]
-			}
-		}
+		matchSubtibles(filesCollection)
 	}
 
+}
+
+func matchSubtibles(files []os.FileInfo) {
+	fc := extractFiles(files)
+
+	fmt.Println(fc)
+
+	movies := fc.Movies
+	subs := fc.Subs
+	extractFilesError := fc.Err
+
+	if extractFilesError != nil {
+		log.Fatalln(extractFilesError)
+	}
+
+	fmt.Println("--- Movies")
+	for _, file := range movies {
+		fmt.Println(file.Name())
+	}
+
+	fmt.Println("--- Subs")
+	for index, file := range subs {
+		fmt.Println(index, file.Name())
+	}
+
+	fmt.Println("--- --- ---")
+
+	// Matching
+	for _, movie := range movies {
+		var bestMatchScore int
+		var bestMatchFile os.FileInfo
+		var bestMatchIndex int
+
+		for subIndex, sub := range subs {
+			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
+
+			// @TODO check for same score!
+			if bestMatchScore < tempMatchScore {
+				bestMatchScore = tempMatchScore
+				bestMatchFile = sub
+				bestMatchIndex = subIndex
+			}
+		}
+
+		fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
+		fmt.Println("----")
+
+		if bestMatchScore == 0 {
+			fmt.Println("Skipping score '0'")
+			continue
+		}
+
+		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
+		subsExtension := filepath.Ext(bestMatchFile.Name())
+
+		fmt.Println("Matched subs for" + movie.Name())
+
+		// @FIXME
+		// we don't have access to the directory :()
+		directory := "test"
+
+		renamed, renameError := rename(
+			directory+string(os.PathSeparator)+bestMatchFile.Name(),
+			directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
+		)
+
+		if renameError != nil {
+			fmt.Println(renameError)
+		}
+
+		if renamed {
+			// remove subs from the list
+			subs[bestMatchIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[bestMatchIndex]
+			subs = subs[:len(subs)-1]
+		}
+	}
 }
