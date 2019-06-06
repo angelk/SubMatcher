@@ -112,18 +112,35 @@ func rDirectoryScanner(dir string) (chan []FileInfo, error) {
 	}
 
 	fileChan := make(chan []FileInfo)
+	directoriesToScan := make([]string, 0)
 
 	go func() {
 		fileCollection := make([]FileInfo, 0)
 		for _, file := range files {
-			fileInfo := FileInfo{
-				file,
-				dir,
+			if file.IsDir() {
+				directoriesToScan = append(
+					directoriesToScan,
+					dir+string(os.PathSeparator)+file.Name(),
+				)
+			} else {
+
+				fileInfo := FileInfo{
+					file,
+					dir,
+				}
+				fileCollection = append(fileCollection, fileInfo)
 			}
-			fileCollection = append(fileCollection, fileInfo)
 		}
 
 		fileChan <- fileCollection
+
+		for _, rDir := range directoriesToScan {
+			rChan, _ := rDirectoryScanner(rDir)
+			for rFileChanData := range rChan {
+				fileChan <- rFileChanData
+			}
+		}
+
 		// @TODO add directories for later scanning
 
 		close(fileChan)
