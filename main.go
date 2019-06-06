@@ -43,8 +43,6 @@ func main() {
 
 	args := flag.Args()
 
-	fmt.Println(*recursiveOption)
-
 	if len(args) < 1 {
 		log.Fatalln("Error, path (1st argument) not provided")
 	}
@@ -52,7 +50,7 @@ func main() {
 	directory := args[0]
 	directory = strings.TrimRight(directory, string(os.PathSeparator))
 
-	var filesChan chan []os.FileInfo
+	var filesChan chan []FileInfo
 	var err error
 
 	if *recursiveOption {
@@ -73,10 +71,8 @@ func main() {
 
 }
 
-func matchSubtibles(files []os.FileInfo) {
+func matchSubtibles(files []FileInfo) {
 	fc := extractFiles(files)
-
-	fmt.Println(fc)
 
 	movies := fc.Movies
 	subs := fc.Subs
@@ -101,7 +97,7 @@ func matchSubtibles(files []os.FileInfo) {
 	// Matching
 	for _, movie := range movies {
 		var bestMatchScore int
-		var bestMatchFile os.FileInfo
+		var bestMatchFile FileInfo
 		var bestMatchIndex int
 
 		for subIndex, sub := range subs {
@@ -126,15 +122,11 @@ func matchSubtibles(files []os.FileInfo) {
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
-		fmt.Println("Matched subs for" + movie.Name())
-
-		// @FIXME
-		// we don't have access to the directory :()
-		directory := "test"
+		fmt.Println("Matched subs for " + movie.Name())
 
 		renamed, renameError := rename(
-			directory+string(os.PathSeparator)+bestMatchFile.Name(),
-			directory+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
+			bestMatchFile.dir+string(os.PathSeparator)+bestMatchFile.Name(),
+			movie.dir+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
 		)
 
 		if renameError != nil {

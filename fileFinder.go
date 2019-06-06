@@ -7,15 +7,20 @@ import (
 	"path/filepath"
 )
 
+type FileInfo struct {
+	os.FileInfo
+	dir string
+}
+
 type fileCollection struct {
-	Movies []os.FileInfo
-	Subs   []os.FileInfo
+	Movies []FileInfo
+	Subs   []FileInfo
 	Err    error
 }
 
-func extractFiles(files []os.FileInfo) fileCollection {
-	movies := make([]os.FileInfo, 0)
-	subs := make([]os.FileInfo, 0)
+func extractFiles(files []FileInfo) fileCollection {
+	movies := make([]FileInfo, 0)
+	subs := make([]FileInfo, 0)
 
 	movieExtensions := make(map[string]bool)
 	movieExtensions[".avi"] = true
@@ -49,7 +54,7 @@ func extractFiles(files []os.FileInfo) fileCollection {
 	return fc
 }
 
-func extractSubsAndVideos(dir string, scanners chan []os.FileInfo) fileCollection {
+func extractSubsAndVideos(dir string) fileCollection {
 	files, error := ioutil.ReadDir(dir)
 	if error != nil {
 		return fileCollection{
@@ -59,8 +64,8 @@ func extractSubsAndVideos(dir string, scanners chan []os.FileInfo) fileCollectio
 		}
 	}
 
-	movies := make([]os.FileInfo, 0)
-	subs := make([]os.FileInfo, 0)
+	movies := make([]FileInfo, 0)
+	subs := make([]FileInfo, 0)
 
 	movieExtensions := make(map[string]bool)
 	movieExtensions[".avi"] = true
@@ -76,9 +81,15 @@ func extractSubsAndVideos(dir string, scanners chan []os.FileInfo) fileCollectio
 		ext := filepath.Ext(file.Name())
 
 		if _, ok := movieExtensions[ext]; ok {
-			movies = append(movies, file)
+			movies = append(movies, FileInfo{
+				file,
+				dir,
+			})
 		} else if _, okSub := subExtensions[ext]; okSub {
-			subs = append(subs, file)
+			subs = append(subs, FileInfo{
+				file,
+				dir,
+			})
 		} else {
 			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
 		}
@@ -94,18 +105,22 @@ func extractSubsAndVideos(dir string, scanners chan []os.FileInfo) fileCollectio
 }
 
 // directory scanner used in "-r" flag
-func rDirectoryScanner(dir string) (chan []os.FileInfo, error) {
+func rDirectoryScanner(dir string) (chan []FileInfo, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	fileChan := make(chan []os.FileInfo)
+	fileChan := make(chan []FileInfo)
 
 	go func() {
-		fileCollection := make([]os.FileInfo, 0)
+		fileCollection := make([]FileInfo, 0)
 		for _, file := range files {
-			fileCollection = append(fileCollection, file)
+			fileInfo := FileInfo{
+				file,
+				dir,
+			}
+			fileCollection = append(fileCollection, fileInfo)
 		}
 
 		fileChan <- fileCollection
@@ -117,18 +132,22 @@ func rDirectoryScanner(dir string) (chan []os.FileInfo, error) {
 	return fileChan, nil
 }
 
-func directoryScanner(dir string) (chan []os.FileInfo, error) {
+func directoryScanner(dir string) (chan []FileInfo, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	fileChan := make(chan []os.FileInfo)
+	fileChan := make(chan []FileInfo)
 
 	go func() {
-		fileCollection := make([]os.FileInfo, 1)
+		fileCollection := make([]FileInfo, 0)
 		for _, file := range files {
-			fileCollection = append(fileCollection, file)
+			fileInfo := FileInfo{
+				file,
+				dir,
+			}
+			fileCollection = append(fileCollection, fileInfo)
 		}
 
 		fileChan <- fileCollection
