@@ -2,6 +2,9 @@
 
 set -e
 
+echo "Building..."
+go build ../../../
+
 doTest() {
     local TEST_DIR=$1
     local EXPECTED_RESULT=$2
@@ -10,6 +13,7 @@ doTest() {
 
     cp -R $TEST_DIR $BACKUP
 
+    ./subMatcher -y $TEST_DIR
     ls --recursive $TEST_DIR > tmp/result.test
 
     set +e
@@ -18,7 +22,6 @@ doTest() {
     set -e
 
     rm -rf $TEST_DIR
-    echo "mv $BACKUP $TEST_DIR"
     mv $BACKUP $TEST_DIR
 
 

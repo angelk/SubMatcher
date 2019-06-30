@@ -45,7 +45,7 @@ func (r *Rename) Rename(old, new string) (bool, error) {
 
 func main() {
 	recursiveOption := flag.Bool("r", false, "recursive option")
-	noInteraction := flag.Bool("n", false, "No interaction")
+	noInteraction := flag.Bool("y", false, "No interaction")
 	flag.Parse()
 
 	args := flag.Args()
