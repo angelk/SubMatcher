@@ -10,18 +10,24 @@ import (
 	"strings"
 )
 
-func rename(old, new string) (bool, error) {
+type Rename struct {
+	ConfirmRename bool
+}
+
+func (r *Rename) Rename(old, new string) (bool, error) {
 	if old == new {
 		return true, nil
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Rename\n", old, "\nto\n", new, "\n[Y/n]")
-	input, _ := reader.ReadString('\n')
+	if r.ConfirmRename {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Rename\n", old, "\nto\n", new, "\n[Y/n]")
+		input, _ := reader.ReadString('\n')
 
-	if input != "Y" && input != "y" && input != "\n" {
-		// renaming denied by user
-		return false, nil
+		if input != "Y" && input != "y" && input != "\n" {
+			// renaming denied by user
+			return false, nil
+		}
 	}
 
 	// rename subs file
@@ -39,6 +45,7 @@ func rename(old, new string) (bool, error) {
 
 func main() {
 	recursiveOption := flag.Bool("r", false, "recursive option")
+	noInteraction := flag.Bool("n", false, "No interaction")
 	flag.Parse()
 
 	args := flag.Args()
@@ -65,13 +72,18 @@ func main() {
 		}
 	}
 
-	for filesCollection := range filesChan {
-		matchSubtibles(filesCollection)
+	renamer := Rename{
+		!*noInteraction,
 	}
 
+	fmt.Println(renamer)
+
+	for filesCollection := range filesChan {
+		matchSubtibles(filesCollection, renamer)
+	}
 }
 
-func matchSubtibles(files []FileInfo) {
+func matchSubtibles(files []FileInfo, renamer Rename) {
 	fc := extractFiles(files)
 
 	movies := fc.Movies
@@ -92,11 +104,9 @@ func matchSubtibles(files []FileInfo) {
 		fmt.Println(index, file.Name())
 	}
 
-	fmt.Println("--- --- ---")
-
 	// Matching
 	for _, movie := range movies {
-		var bestMatchScore int
+		bestMatchScore := 0
 		var bestMatchFile FileInfo
 		var bestMatchIndex int
 
@@ -111,20 +121,20 @@ func matchSubtibles(files []FileInfo) {
 			}
 		}
 
-		fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
-		fmt.Println("----")
-
 		if bestMatchScore == 0 {
 			fmt.Println("Skipping score '0'")
 			continue
 		}
+
+		fmt.Println("score ", bestMatchScore, movie.Name(), bestMatchFile.Name())
+		fmt.Println("----")
 
 		movieLenWithoutExt := len(movie.Name()) - len(filepath.Ext(movie.Name()))
 		subsExtension := filepath.Ext(bestMatchFile.Name())
 
 		fmt.Println("Matched subs for " + movie.Name())
 
-		renamed, renameError := rename(
+		renamed, renameError := renamer.Rename(
 			bestMatchFile.dir+string(os.PathSeparator)+bestMatchFile.Name(),
 			movie.dir+string(os.PathSeparator)+movie.Name()[0:movieLenWithoutExt]+subsExtension,
 		)
