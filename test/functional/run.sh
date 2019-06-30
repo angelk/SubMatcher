@@ -3,7 +3,7 @@
 set -e
 
 echo "Building..."
-go build ../../../
+go build ../../
 
 doTest() {
     local TEST_DIR=$1
