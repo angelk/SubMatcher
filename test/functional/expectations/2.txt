@@ -1,5 +1,10 @@
-./cases/case1:
-MyMovie_1.srt
+./cases/case2:
 MyMovie.avi
+MyMovie.srt
 MySerial S01E01.avi
-MySerial S01E01_x254.srt
+MySerial S01E01.srt
+SerialA
+
+./cases/case2/SerialA:
+E01.avi
+E01.srt

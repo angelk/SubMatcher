@@ -8,12 +8,13 @@ go build -o subMatcher ../../
 doTest() {
     local TEST_DIR=$1
     local EXPECTED_RESULT=$2
+    local FLAGS=$3
     local BACKUP="tmp/backup"
     mkdir -p tmp
 
     cp -R $TEST_DIR $BACKUP
 
-    ./subMatcher -y $TEST_DIR
+    ./subMatcher -y $3 $TEST_DIR > tmp/output.txt
     ls --recursive $TEST_DIR > tmp/result.test
 
     set +e
@@ -38,3 +39,5 @@ doTest() {
 }
 
 doTest "./cases/case1" "expectations/1.txt"
+doTest "./cases/case1" "expectations/1.txt" "-r"
+doTest "./cases/case2" "expectations/2.txt" "-r"
