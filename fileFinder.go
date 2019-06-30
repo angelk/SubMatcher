@@ -141,8 +141,6 @@ func rDirectoryScanner(dir string) (chan []FileInfo, error) {
 			}
 		}
 
-		// @TODO add directories for later scanning
-
 		close(fileChan)
 	}()
 
