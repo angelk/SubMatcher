@@ -11,3 +11,8 @@ script:
 matrix:
   allow_failures:
   - go: master
+
+notifications:
+  on_success: never
+  on_failure: never
+  on_change: never

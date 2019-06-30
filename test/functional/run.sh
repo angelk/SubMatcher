@@ -5,6 +5,10 @@ set -e
 echo "Building..."
 go build ../../
 
+ls -la
+pwd
+echo $GOPATH
+
 doTest() {
     local TEST_DIR=$1
     local EXPECTED_RESULT=$2
