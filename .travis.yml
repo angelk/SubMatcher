@@ -6,3 +6,7 @@ go:
 
 script:
   go test
+
+matrix:
+  allow_failures:
+  - go: master
