@@ -53,3 +53,6 @@ to
 $ ls ./__test
 MyMovie.avi  MyMovie.srt  MySerial S01E01.avi  MySerial S01E01.srt
 ```
+# Options
+## `-r`
+Recursive option. Every directory will have `subMatcher` applied for itself.

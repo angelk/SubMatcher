@@ -1,0 +1,18 @@
+language: go
+
+go:
+- "1.8.x"
+- master
+
+script:
+- go test
+- cd test/functional && ./run.sh
+
+matrix:
+  allow_failures:
+  - go: master
+
+notifications:
+  on_success: never
+  on_failure: never
+  on_change: never
