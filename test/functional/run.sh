@@ -3,7 +3,7 @@
 set -e
 
 echo "Building..."
-go build ../../
+go build -o subMatcher ../../
 
 ls -la
 pwd
