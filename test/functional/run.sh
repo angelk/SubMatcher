@@ -5,10 +5,6 @@ set -e
 echo "Building..."
 go build -o subMatcher ../../
 
-ls -la
-pwd
-echo $GOPATH
-
 doTest() {
     local TEST_DIR=$1
     local EXPECTED_RESULT=$2
