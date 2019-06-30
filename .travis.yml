@@ -5,8 +5,8 @@ go:
 - master
 
 script:
-  go test
-  cd test/functional && ./run.sh
+- go test
+- cd test/functional && ./run.sh
 
 matrix:
   allow_failures:
