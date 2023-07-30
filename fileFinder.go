@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type FileInfo struct {
@@ -18,23 +20,68 @@ type fileCollection struct {
 	Err    error
 }
 
+var movieExtensions = map[string]bool{
+	".avi": true,
+	".mkv": true,
+	".ts":  true,
+}
+
+var subExtensions = map[string]bool{
+	".srt": true,
+	".sub": true,
+	".sbv": true,
+}
+
+var incompleteExtension = map[string]bool{
+	".!qB": true,
+}
+
+type fakeFileInfo struct {
+	name string
+}
+
+func (f fakeFileInfo) Name() string {
+	return f.name
+}
+
+func (f fakeFileInfo) Size() int64 {
+	return 0
+}
+
+func (f fakeFileInfo) Mode() fs.FileMode {
+	return 0
+}
+
+func (f fakeFileInfo) ModTime() time.Time {
+	return time.Now()
+}
+
+func (f fakeFileInfo) IsDir() bool {
+	return false
+}
+
+func (f fakeFileInfo) Sys() any {
+	return nil
+}
+
+var _ fs.FileInfo = (*fakeFileInfo)(nil)
+
 func extractFiles(files []FileInfo) fileCollection {
 	movies := make([]FileInfo, 0)
 	subs := make([]FileInfo, 0)
 
-	movieExtensions := make(map[string]bool)
-	movieExtensions[".avi"] = true
-	movieExtensions[".mkv"] = true
-	movieExtensions[".ts"] = true
-
-	subExtensions := make(map[string]bool)
-	subExtensions[".srt"] = true
-	subExtensions[".sub"] = true
-	subExtensions[".sbv"] = true
-
 	for _, file := range files {
-
 		ext := filepath.Ext(file.Name())
+		if _, okIncomp := incompleteExtension[ext]; okIncomp {
+			fmt.Println("======== unknownw:", file.Name())
+			fmt.Printf("%T [type]---- \n", file)
+			/*
+				newFile := fakeFileInfo{
+					name: file.Name(),
+				}
+			*/
+			// file = newFile
+		}
 
 		if _, ok := movieExtensions[ext]; ok {
 			movies = append(movies, file)
@@ -42,6 +89,7 @@ func extractFiles(files []FileInfo) fileCollection {
 			subs = append(subs, file)
 		} else {
 			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
+			fmt.Println("Debug", file.Name, " --- ", ext)
 		}
 	}
 
@@ -66,16 +114,6 @@ func extractSubsAndVideos(dir string) fileCollection {
 
 	movies := make([]FileInfo, 0)
 	subs := make([]FileInfo, 0)
-
-	movieExtensions := make(map[string]bool)
-	movieExtensions[".avi"] = true
-	movieExtensions[".mkv"] = true
-	movieExtensions[".ts"] = true
-
-	subExtensions := make(map[string]bool)
-	subExtensions[".srt"] = true
-	subExtensions[".sub"] = true
-	subExtensions[".sbv"] = true
 
 	for _, file := range files {
 		ext := filepath.Ext(file.Name())

@@ -4,7 +4,7 @@
 This project will rename your subtitle files to match the video file.
 
 # Requirements
-go version >=1.12.4
+go version >=1.18.3
 
 # Build
 ```
