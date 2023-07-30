@@ -22,74 +22,26 @@ func extractFiles(files []FileInfo) fileCollection {
 	movies := make([]FileInfo, 0)
 	subs := make([]FileInfo, 0)
 
-	movieExtensions := make(map[string]bool)
-	movieExtensions[".avi"] = true
-	movieExtensions[".mkv"] = true
-	movieExtensions[".ts"] = true
+	movieExtensions := map[string]bool{
+		".avi": true,
+		".mkv": true,
+		".mp4": true,
+		".ts":  true,
+	}
 
-	subExtensions := make(map[string]bool)
-	subExtensions[".srt"] = true
-	subExtensions[".sub"] = true
-	subExtensions[".sbv"] = true
+	subExtensions := map[string]bool{
+		".srt": true,
+		".sub": true,
+		".sbv": true,
+	}
 
 	for _, file := range files {
-
 		ext := filepath.Ext(file.Name())
 
 		if _, ok := movieExtensions[ext]; ok {
 			movies = append(movies, file)
 		} else if _, okSub := subExtensions[ext]; okSub {
 			subs = append(subs, file)
-		} else {
-			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
-		}
-	}
-
-	fc := fileCollection{
-		movies,
-		subs,
-		nil,
-	}
-
-	return fc
-}
-
-func extractSubsAndVideos(dir string) fileCollection {
-	files, error := ioutil.ReadDir(dir)
-	if error != nil {
-		return fileCollection{
-			nil,
-			nil,
-			error,
-		}
-	}
-
-	movies := make([]FileInfo, 0)
-	subs := make([]FileInfo, 0)
-
-	movieExtensions := make(map[string]bool)
-	movieExtensions[".avi"] = true
-	movieExtensions[".mkv"] = true
-	movieExtensions[".ts"] = true
-
-	subExtensions := make(map[string]bool)
-	subExtensions[".srt"] = true
-	subExtensions[".sub"] = true
-	subExtensions[".sbv"] = true
-
-	for _, file := range files {
-		ext := filepath.Ext(file.Name())
-
-		if _, ok := movieExtensions[ext]; ok {
-			movies = append(movies, FileInfo{
-				file,
-				dir,
-			})
-		} else if _, okSub := subExtensions[ext]; okSub {
-			subs = append(subs, FileInfo{
-				file,
-				dir,
-			})
 		} else {
 			fmt.Println("Skipping file", file.Name(), "Unknown extension!")
 		}
