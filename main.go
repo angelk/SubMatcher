@@ -45,11 +45,11 @@ func main() {
 	fmt.Println(renamer)
 
 	for filesCollection := range filesChan {
-		matchSubtibles(filesCollection, renamer)
+		matchSubtitles(filesCollection, renamer)
 	}
 }
 
-func matchSubtibles(files []FileInfo, renamer Rename) {
+func matchSubtitles(files []FileInfo, renamer Rename) {
 	fc := extractFiles(files)
 
 	movies := fc.Movies
@@ -68,6 +68,30 @@ func matchSubtibles(files []FileInfo, renamer Rename) {
 	fmt.Println("--- Subs")
 	for index, file := range subs {
 		fmt.Println(index, file.Name())
+	}
+
+	// remove exact matches
+	scanAgain := true
+	for scanAgain {
+		scanAgain = false
+		for movieIndex, movie := range movies {
+			movieName := movie.Name()[:len(movie.Name())-len(filepath.Ext(movie.Name()))]
+			for subIndex, sub := range subs {
+				subName := sub.Name()[:len(sub.Name())-len(filepath.Ext(sub.Name()))]
+				if subName == movieName {
+					subs[subIndex], subs[len(subs)-1] = subs[len(subs)-1], subs[subIndex]
+					subs = subs[:len(subs)-1]
+
+					movies[movieIndex], movies[len(movies)-1] = movies[len(movies)-1], movies[movieIndex]
+					movies = movies[:len(movies)-1]
+					scanAgain = true
+					break
+				}
+			}
+			if scanAgain {
+				break
+			}
+		}
 	}
 
 	// Matching
