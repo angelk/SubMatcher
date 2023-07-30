@@ -101,7 +101,7 @@ func matchSubtitles(files []FileInfo, renamer Rename) {
 		var bestMatchIndex int
 
 		for subIndex, sub := range subs {
-			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 2)
+			tempMatchScore := getMatchScore(movie.Name(), sub.Name(), 3)
 
 			// @TODO check for same score!
 			if bestMatchScore < tempMatchScore {
